@@ -3,22 +3,23 @@ import { Button } from 'react-bootstrap';
 import firebase from "firebase/app";
 import "firebase/auth";
 import firebaseConfig from './firebase.config';
+import './App.css';
 
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 
 function App() {
-
+  const [newUser, setNewUser] = useState(false);
   const [user, setUser] = useState({
     isSignIn: false,
     name: '',
     email: '',
     password: '',
-    photo: ''
+    photo: '',
+    error: ''
   })
   const provider = new firebase.auth.GoogleAuthProvider();
-
   const handleSignIn = () => {
     firebase.auth().signInWithPopup(provider)
       .then(res => {
@@ -44,7 +45,9 @@ function App() {
           isSignIn: false,
           name: '',
           photo: '',
-          email: ''
+          email: '',
+          error: '',
+          success: false
         }
         setUser(signOutUser)
       })
@@ -54,25 +57,70 @@ function App() {
   }
 
   const handleBlur = (event) => {
-    let isFormValid = true;
-    if(event.target.name === 'email'){
-      isFormValid = /\S+@\S+\.\S+/.test(event.target.value);
+    let isFieldValid = true;
+    if (event.target.name === 'email') {
+      isFieldValid = /\S+@\S+\.\S+/.test(event.target.value);
     }
-    if(event.target.name === 'password'){
+    if (event.target.name === 'password') {
       const isPasswordValid = event.target.value.length > 6;
       const passwordHasNumber = /\d{1}/.test(event.target.value);
-      isFormValid = isPasswordValid && passwordHasNumber;
+      isFieldValid = isPasswordValid && passwordHasNumber;
     }
-    if(isFormValid){
-      // [...]
-      const newUserInfo = {...user};
+    if (isFieldValid) {
+      const newUserInfo = { ...user };
       newUserInfo[event.target.name] = event.target.value;
       setUser(newUserInfo);
     }
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = (event) => {
+    if (newUser && user.email && user.password) {
+      firebase.auth().createUserWithEmailAndPassword(user.email, user.password)
+        .then(res => {
+          const newUserInfo = { ...user };
+          newUserInfo.error = '';
+          newUserInfo.success = true;
+          setUser(newUserInfo);
+        })
+        .catch(error => {
+          const newUserInfo = { ...user };
+          newUserInfo.error = error.message;
+          newUserInfo.success = false;
+          setUser(newUserInfo);
+          updateUserName(user.name);
+        })
+    }
 
+    if (!newUser && user.email && user.password) {
+      firebase.auth().signInWithEmailAndPassword(user.email, user.password)
+        .then(res => {
+          const newUserInfo = { ...user };
+          newUserInfo.error = '';
+          newUserInfo.success = true;
+          setUser(newUserInfo);
+          console.log('sign in user info', res.user)
+        })
+        .catch(function (error) {
+          const newUserInfo = { ...user };
+          newUserInfo.error = error.message;
+          newUserInfo.success = false;
+          setUser(newUserInfo);
+        })
+    }
+
+    event.preventDefault();
+
+  }
+
+  const updateUserName = name => {
+    const user = firebase.auth().currentUser;
+    user.updateProfile({
+      displayName: name,
+    }).then(function () {
+      console.log('user update successfully')
+    }).catch(function (error) {
+      console.log(error)
+    });
   }
 
   return (
@@ -90,17 +138,24 @@ function App() {
         </div>
       }
 
-
       <h1>Our own auth</h1>
-      <p>Name: {user.name}</p>
-      <p>Email: {user.email}</p>
-      <p>Password: {user.password}</p>
-      <form onSubmit={handleSubmit}>
-        <input name="name" onBlur={handleBlur} type="text" placeholder="name"/> <br /><br />
-        <input onBlur={handleBlur} type="text" name="email" placeholder="your email" required /> <br /><br />
-        <input onBlur={handleBlur} type="password" name="password" id="" placeholder="password" required /> <br /><br />
-        <input type="submit" value="Sign In" />
-      </form>
+      <div className="login-form">
+        <input type="checkbox" onChange={() => setNewUser(!newUser)} name="newUser" id="" />
+        <label htmlFor="newUser">New User Sign Up</label>
+
+        <form onSubmit={handleSubmit}>
+          {newUser && <input name="name" onBlur={handleBlur} type="text" placeholder="Name" />} <br /><br />
+          <input onBlur={handleBlur} type="text" name="email" placeholder="Email" required /> <br /><br />
+          <input onBlur={handleBlur} type="password" name="password" id="" placeholder="Password" required /> <br /><br />
+          <input className="submit-btn" type="submit" value={newUser ? 'Sign up' : 'Sign In'} />
+        </form>
+        <p style={{ color: 'red' }}>{user.error}</p>
+
+        {
+          user.success && <p style={{ color: 'green' }}>User {newUser ? 'create' : 'Logged in'} successfully</p>
+        }
+      </div>
+
     </div>
   );
 }
