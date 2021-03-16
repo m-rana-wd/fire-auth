@@ -38,7 +38,8 @@
 }
 .login-form{
   background-color: #fff;
-  width: 500px;
+  width: 400px;
+  border-radius: 5px;
   padding: 20px;
   margin: 0 auto;
   box-shadow: 0 0 6px 0 rgba(115,115,115,0.5);

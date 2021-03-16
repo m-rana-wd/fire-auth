@@ -125,9 +125,12 @@ function App() {
 
   return (
     <div className="text-center p-5">
+     
+      <h1>Firebase Authentication</h1> <hr/>
+      <div className="login-form">
       {
         user.isSignIn ? <Button onClick={handleSignOut} className="btn btn-success">Sign Out</Button> :
-          <Button onClick={handleSignIn} className="btn btn-success">Sign In</Button>
+          <Button onClick={handleSignIn} className="btn btn-success">Sign In with Google</Button>
       }
 
       {
@@ -137,9 +140,9 @@ function App() {
           <img src={user.photo} alt="" />
         </div>
       }
+<br/>
+<br/>
 
-      <h1>Our own auth</h1>
-      <div className="login-form">
         <input type="checkbox" onChange={() => setNewUser(!newUser)} name="newUser" id="" />
         <label htmlFor="newUser">New User Sign Up</label>
 
@@ -155,6 +158,7 @@ function App() {
           user.success && <p style={{ color: 'green' }}>User {newUser ? 'create' : 'Logged in'} successfully</p>
         }
       </div>
+
 
     </div>
   );
